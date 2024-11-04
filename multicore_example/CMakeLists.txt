@@ -8,6 +8,9 @@ target_link_libraries(multicore_example
         hardware_adc
 )
 
+pico_enable_stdio_usb(multicore_example 1)
+pico_enable_stdio_uart(multicore_example 0)
+
 # create map/bin/hex file etc.
 pico_add_extra_outputs(multicore_example)
 

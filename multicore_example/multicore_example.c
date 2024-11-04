@@ -1,20 +1,18 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
-#include "hardware/irq.h"
-#include "hardware/adc.h"
  
+#define CORE_FLAG 1
 // Core 1 interrupt Handler
 void swapThread(int ms){
-    uint16_t raw ;
+    printf("swapping core\n");
     bool val = multicore_fifo_rvalid();
     if(val){//non empty
-        raw = multicore_fifo_pop_blocking();
+        multicore_fifo_pop_blocking();
         sleep_ms(ms);
     }
     else{//empty
-        uint16_t raw = adc_read();
-        multicore_fifo_push_blocking(raw);
+        multicore_fifo_push_blocking(CORE_FLAG);
         sleep_ms(ms);
     }
 }
@@ -22,7 +20,8 @@ void swapThread(int ms){
 // Core 1 Main Code
 void core1_entry() {
     while (1) {
-        swap_Thread(100);
+        printf("hello from core 1\n");
+        swapThread(100);
     }
 }
 
@@ -32,13 +31,12 @@ int main(void){
 
     multicore_launch_core1(core1_entry); // Start core 1 - Do this before any interrupt configuration
 
-    // Configure the ADC
-    adc_init();
-    adc_set_temp_sensor_enabled(true); // Enable on board temp sensor
-    adc_select_input(4);
-    
+    while (!stdio_usb_connected());
+    while (!stdio_usb_init());
+
     // Primary Core 0 Loop
     while (1) { 
-        swap_Thread(100);
+        printf("hello from core 0\n");
+        swapThread(100);
     }
 }
